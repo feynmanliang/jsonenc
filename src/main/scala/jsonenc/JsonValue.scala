@@ -1,3 +1,5 @@
+package jsonenc
+
 sealed trait JsonValue
 
 case class JsonObject(fields: List[(String, JsonValue)]) extends JsonValue

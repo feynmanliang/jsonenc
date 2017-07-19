@@ -8,5 +8,8 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "Shapeless Json Encoder",
-    libraryDependencies += shapeless % Compile
+    libraryDependencies ++= Seq(
+      shapeless % Compile,
+      scalatest % Test
+    )
   )
