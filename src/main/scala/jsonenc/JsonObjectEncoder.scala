@@ -1,6 +1,6 @@
 package jsonenc
 
-import shapeless.{HList, ::, HNil, LabelledGeneric, Lazy, Witness}
+import shapeless.{::, :+:, CNil, Coproduct, HList, HNil, Inl, Inr, LabelledGeneric, Lazy, Witness}
 import shapeless.labelled.FieldType
 
 trait JsonObjectEncoder[A] extends JsonEncoder[A] {
@@ -33,7 +33,25 @@ object JsonObjectEncoder {
       }
   }
 
-  implicit def genericObjectEncoder[A, H <: HList](
+  implicit val cnilEncoder: JsonObjectEncoder[CNil] =
+    createObjectEncoder(_ => throw new Exception("Impossible!"))
+
+  implicit def coproductEncoder[K <: Symbol, H, T <: Coproduct](
+    implicit
+    witness: Witness.Aux[K],
+    hEncoder: Lazy[JsonEncoder[H]], // `Lazy` important because JsonObject is recursive, prevent implicit divergence
+    tEncoder: JsonObjectEncoder[T]
+  ): JsonObjectEncoder[FieldType[K, H] :+: T] = {
+      val fieldName = witness.value.name
+      createObjectEncoder {
+        case Inl(h) =>
+          JsonObject(List(fieldName -> hEncoder.value.encode(h)))
+        case Inr(t) =>
+          tEncoder.encode(t)
+      }
+  }
+
+  implicit def genericObjectEncoder[A, H](
     implicit
     generic: LabelledGeneric.Aux[A, H],
     hEncoder: Lazy[JsonObjectEncoder[H]]
